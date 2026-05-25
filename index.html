@@ -63,6 +63,15 @@ body {
   margin-top: 2px;
 }
 
+.best-time {
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
 .controls {
   display: flex;
   justify-content: space-between;
@@ -169,6 +178,33 @@ body {
 .overlay.hidden { display: none; }
 .overlay p { font-size: 48px; font-weight: 700; margin-bottom: 16px; color: #776e65; }
 
+.stats-panel {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(238, 228, 218, 0.95);
+  z-index: 100;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats-panel.visible { display: flex; }
+
+.stats-panel h2 {
+  font-size: 32px;
+  color: #776e65;
+  margin-bottom: 16px;
+}
+
+.stats-panel canvas {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.stats-panel .btn { margin-top: 16px; }
+
 @media (max-width: 520px) {
   .container { width: 100%; }
   .header h1 { font-size: 48px; }
@@ -187,12 +223,15 @@ body {
     <h1>2048 🐰版</h1>
     <div class="scores">
       <div class="score-box">SCORE<span id="score">0</span></div>
-      <div class="score-box">BEST<span id="best">0</span></div>
+      <div class="score-box">BEST<span id="best">0</span><div class="best-time" id="bestTime"></div></div>
     </div>
   </div>
   <div class="controls">
     <p>合并数字，达到 <strong>2048</strong> 方块！</p>
-    <button class="btn" id="newGameBtn">新游戏</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" id="statsBtn">统计</button>
+      <button class="btn" id="newGameBtn">新游戏</button>
+    </div>
   </div>
   <div class="grid-container" id="gridContainer">
     <div class="grid-bg">
@@ -209,16 +248,35 @@ body {
   </div>
 </div>
 
+<div class="stats-panel" id="statsPanel">
+  <h2>最高分趋势</h2>
+  <canvas id="statsCanvas" width="380" height="240"></canvas>
+  <button class="btn" id="statsCloseBtn">关闭</button>
+</div>
+
 <script>
 (function() {
   // ── State ────────────────────────────────────
   var grid, score, bestScore, prevGrid, mergedPos, winShown;
+  var bestTime = '';  // timestamp string for best score
+  var statsData = []; // {time: timestamp, score: number}[]
+
+  function loadStats() {
+    try { statsData = JSON.parse(localStorage.getItem('stats2048')) || []; } catch(e) { statsData = []; }
+    bestScore = parseInt(localStorage.getItem('best2048')) || 0;
+    bestTime = localStorage.getItem('best2048time') || '';
+    if (statsData.length === 0 && bestScore > 0) {
+      // migrate: no stats but has best score — seed first data point
+      statsData = [{time: bestTime || Date.now(), score: bestScore}];
+      localStorage.setItem('stats2048', JSON.stringify(statsData));
+    }
+  }
 
   function init() {
     grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
     score = 0;
     winShown = false;
-    bestScore = parseInt(localStorage.getItem('best2048')) || 0;
+    loadStats();
     prevGrid = null;
     mergedPos = null;
     addTile();
@@ -314,8 +372,21 @@ body {
   function updateBest() {
     if (score > bestScore) {
       bestScore = score;
+      var now = Date.now();
+      bestTime = formatTime(now);
       localStorage.setItem('best2048', bestScore);
+      localStorage.setItem('best2048time', bestTime);
+      statsData.push({time: now, score: bestScore});
+      localStorage.setItem('stats2048', JSON.stringify(statsData));
+      document.getElementById('bestTime').textContent = bestTime;
     }
+  }
+
+  function formatTime(ts) {
+    var d = new Date(ts);
+    var pad = function(n) { return n < 10 ? '0' + n : n; };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' +
+           pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
   }
 
   // ── Win/Lose ──────────────────────────────────
@@ -353,6 +424,7 @@ body {
   function updateUI() {
     document.getElementById('score').textContent = score;
     document.getElementById('best').textContent = bestScore;
+    document.getElementById('bestTime').textContent = bestTime;
     renderTiles();
   }
 
@@ -435,6 +507,113 @@ body {
   });
 
   window.addEventListener('resize', renderTiles);
+
+  // ── Statistics Chart ──────────────────────────
+  document.getElementById('statsBtn').addEventListener('click', function() {
+    document.getElementById('statsPanel').classList.add('visible');
+    drawChart();
+  });
+
+  document.getElementById('statsCloseBtn').addEventListener('click', function() {
+    document.getElementById('statsPanel').classList.remove('visible');
+  });
+
+  document.getElementById('statsPanel').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('visible');
+  });
+
+  function drawChart() {
+    var canvas = document.getElementById('statsCanvas');
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var pad = {top: 16, right: 20, bottom: 36, left: 52};
+    var pw = W - pad.left - pad.right;
+    var ph = H - pad.top - pad.bottom;
+
+    ctx.clearRect(0, 0, W, H);
+
+    var data = statsData;
+    if (data.length === 0) {
+      ctx.fillStyle = '#776e65';
+      ctx.font = '14px "Clear Sans","Helvetica Neue",Arial,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('暂无数据，快去破纪录吧！', W / 2, H / 2);
+      return;
+    }
+
+    // Y axis range
+    var maxScore = data[data.length - 1].score;
+    var yNice = niceMax(maxScore);
+
+    // X axis range (time)
+    var tMin = data[0].time;
+    var tMax = data[data.length - 1].time;
+    if (tMax === tMin) tMax = tMin + 3600000; // 1h span if single point
+
+    function xOf(i) { return pad.left + (i / (data.length - 1 || 1)) * pw; }
+    function yOf(v) { return pad.top + (1 - v / yNice) * ph; }
+
+    // Grid lines
+    ctx.strokeStyle = '#e0d8cc';
+    ctx.lineWidth = 1;
+    var gridLines = 4;
+    for (var g = 0; g <= gridLines; g++) {
+      var y = pad.top + (g / gridLines) * ph;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(W - pad.right, y);
+      ctx.stroke();
+
+      ctx.fillStyle = '#776e65';
+      ctx.font = '10px "Clear Sans","Helvetica Neue",Arial,sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(Math.round(yNice * (1 - g / gridLines)), pad.left - 6, y + 4);
+    }
+
+    // X axis labels (show up to 5 evenly spaced)
+    ctx.textAlign = 'center';
+    var xLabels = Math.min(5, data.length);
+    for (var l = 0; l < xLabels; l++) {
+      var idx = Math.round((l / (xLabels - 1 || 1)) * (data.length - 1));
+      var x = xOf(idx);
+      var d = new Date(data[idx].time);
+      var label = (d.getMonth() + 1) + '/' + d.getDate();
+      ctx.fillText(label, x, H - pad.bottom + 16);
+    }
+
+    // Line
+    ctx.strokeStyle = '#edc22e';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (var i = 0; i < data.length; i++) {
+      var px = (data.length === 1) ? pad.left + pw / 2 : xOf(i);
+      var py = yOf(data[i].score);
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Dots
+    ctx.fillStyle = '#f59563';
+    for (var i = 0; i < data.length; i++) {
+      var dx = (data.length === 1) ? pad.left + pw / 2 : xOf(i);
+      var dy = yOf(data[i].score);
+      ctx.beginPath();
+      ctx.arc(dx, dy, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function niceMax(v) {
+    if (v <= 0) return 100;
+    var mag = Math.pow(10, Math.floor(Math.log10(v)));
+    var r = v / mag;
+    if (r <= 1) return mag;
+    if (r <= 2) return 2 * mag;
+    if (r <= 5) return 5 * mag;
+    return 10 * mag;
+  }
 
   // ── Start ─────────────────────────────────────
   init();
