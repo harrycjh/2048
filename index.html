@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>2048</title>
+<title>2048 🐰版</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -15,6 +15,8 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  overflow: hidden;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
@@ -182,7 +184,7 @@ body {
 
 <div class="container">
   <div class="header">
-    <h1>2048</h1>
+    <h1>2048 🐰版</h1>
     <div class="scores">
       <div class="score-box">SCORE<span id="score">0</span></div>
       <div class="score-box">BEST<span id="best">0</span></div>
@@ -425,7 +427,7 @@ body {
     touchStartX = null;
   });
 
-  gridEl.addEventListener('touchmove', function(e) { e.preventDefault(); }, {passive: false});
+  document.addEventListener('touchmove', function(e) { e.preventDefault(); }, {passive: false});
 
   document.getElementById('newGameBtn').addEventListener('click', function() {
     document.getElementById('overlay').classList.add('hidden');
