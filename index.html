@@ -46,11 +46,12 @@ body {
 }
 
 .header h1 {
-  font-size: 72px;
+  font-size: 88px;
   font-weight: 700;
   line-height: 0.8;
   color: var(--theme-title);
   transition: color 0.5s ease;
+  margin-bottom: -4px;
 }
 
 .scores { display: flex; gap: 8px; }
@@ -234,6 +235,7 @@ body {
   <div class="controls">
     <p>合并数字，达到 <strong>2048</strong> 方块！</p>
     <div style="display:flex;gap:8px;">
+      <button class="btn" id="debugBtn">调试</button>
       <button class="btn" id="statsBtn">统计</button>
       <button class="btn" id="newGameBtn">新游戏</button>
     </div>
@@ -306,6 +308,7 @@ body {
   var statsData = [];
   var idGrid, idToEl, nextId;
   var currentTheme = THEMES[0];
+  var debugThemeIdx = null; // null = auto, number = force specific theme
 
   function loadStats() {
     try { statsData = JSON.parse(localStorage.getItem('stats2048')) || []; } catch(e) { statsData = []; }
@@ -366,7 +369,7 @@ body {
 
   function applyTheme() {
     var maxVal = getMaxVal();
-    var theme = getTheme(maxVal);
+    var theme = debugThemeIdx != null ? THEMES[debugThemeIdx] : getTheme(maxVal);
     currentTheme = theme;
     var c = theme.color;
     var rgb = hexToRgb(c);
@@ -714,6 +717,17 @@ body {
   window.addEventListener('resize', renderTiles);
 
   // ── Statistics Chart ──────────────────────────
+  // ── Debug: cycle through all themes ──────────
+  document.getElementById('debugBtn').addEventListener('click', function() {
+    if (debugThemeIdx == null) {
+      debugThemeIdx = 0;
+    } else {
+      debugThemeIdx = (debugThemeIdx + 1) % THEMES.length;
+    }
+    applyTheme();
+    updateUI();
+  });
+
   document.getElementById('statsBtn').addEventListener('click', function() {
     document.getElementById('statsPanel').classList.add('visible');
     drawChart();
