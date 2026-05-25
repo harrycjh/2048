@@ -57,7 +57,7 @@ body {
 
 .score-box {
   background: var(--theme-score-bg);
-  color: #eee4da;
+  color: var(--theme-score-label, #eee4da);
   border-radius: 6px;
   padding: 8px 20px;
   text-align: center;
@@ -66,13 +66,13 @@ body {
   text-transform: uppercase;
   letter-spacing: 1px;
   min-width: 70px;
-  transition: background 0.5s ease;
+  transition: background 0.5s ease, color 0.5s ease;
 }
 
 .score-box span {
   display: block;
   font-size: 22px;
-  color: #fff;
+  color: var(--theme-score-text, #fff);
   margin-top: 2px;
 }
 
@@ -402,7 +402,19 @@ body {
       root.setProperty('--theme-primary', c);
       root.setProperty('--theme-primary-rgb', rgbStr);
       root.setProperty('--theme-title', theme.max > 8 ? c : '#776e65');
-      root.setProperty('--theme-score-bg', theme.max > 8 ? rgbToHex(Math.round(rgb[0]*0.73), Math.round(rgb[1]*0.73), Math.round(rgb[2]*0.73)) : '#bbada0');
+      if (theme.max > 8) {
+        // Score boxes: light tinted bg, deeper text
+        var lightR = Math.round(lerp(240, rgb[0], 0.22));
+        var lightG = Math.round(lerp(240, rgb[1], 0.22));
+        var lightB = Math.round(lerp(240, rgb[2], 0.22));
+        root.setProperty('--theme-score-bg', rgbToHex(lightR, lightG, lightB));
+        root.setProperty('--theme-score-label', 'rgba(' + rgbStr + ',0.85)');
+        root.setProperty('--theme-score-text', c);
+      } else {
+        root.setProperty('--theme-score-bg', '#bbada0');
+        root.setProperty('--theme-score-label', '#eee4da');
+        root.setProperty('--theme-score-text', '#fff');
+      }
       root.setProperty('--theme-grid-bg', theme.max > 8 ? 'rgba(' + rgbStr + ',0.15)' : '#bbada0');
       root.setProperty('--theme-grid-glow', 'rgba(' + rgbStr + ',0.12)');
       root.setProperty('--theme-bg', '#faf8ef');
@@ -629,7 +641,7 @@ body {
           tile.style.color = '#00E5FF';
           tile.style.boxShadow = '0 0 20px rgba(0,229,255,0.4), inset 0 0 15px rgba(139,92,246,0.2)';
         } else {
-          tile.style.color = isDark(bg) ? '#f9f6f2' : '#776e65';
+          tile.style.color = val >= 8 ? '#f9f6f2' : (isDark(bg) ? '#f9f6f2' : '#776e65');
           tile.style.border = '';
           tile.style.boxShadow = '';
           tile.style.textShadow = '';
