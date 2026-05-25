@@ -130,7 +130,7 @@ body {
   font-size: 48px;
   font-weight: 700;
   border-radius: 6px;
-  transition: transform 0.12s ease-in-out, left 0.12s ease-in-out, top 0.12s ease-in-out;
+  transition: transform 0.15s ease-in-out, left 0.15s ease-in-out, top 0.15s ease-in-out;
   z-index: 1;
 }
 
@@ -260,6 +260,9 @@ body {
   var grid, score, bestScore, prevGrid, mergedPos, winShown;
   var bestTime = '';  // timestamp string for best score
   var statsData = []; // {time: timestamp, score: number}[]
+  var idGrid;         // 4x4 grid mirror: 0 or unique tile ID
+  var nextId = 1;     // next available tile ID
+  var idToEl = {};    // tile ID → DOM element for recycling
 
   function loadStats() {
     try { statsData = JSON.parse(localStorage.getItem('stats2048')) || []; } catch(e) { statsData = []; }
@@ -274,11 +277,16 @@ body {
 
   function init() {
     grid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    idGrid = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
     score = 0;
     winShown = false;
     loadStats();
     prevGrid = null;
     mergedPos = null;
+    // Remove old tile elements
+    for (var k in idToEl) { idToEl[k].remove(); }
+    idToEl = {};
+    nextId = 1;
     addTile();
     addTile();
     updateUI();
@@ -298,51 +306,64 @@ body {
     if (empty.length === 0) return false;
     var pos = empty[Math.floor(Math.random() * empty.length)];
     grid[pos.r][pos.c] = Math.random() < 0.9 ? 2 : 4;
+    idGrid[pos.r][pos.c] = nextId++;
     return true;
   }
 
   // ── Core Move ─────────────────────────────────
-  function slideLine(row) {
-    var arr = [];
+  function slideLine(row, idRow) {
+    // Compact non-zero values and their IDs
+    var arr = [], ids = [];
     for (var i = 0; i < row.length; i++) {
-      if (row[i] !== 0) arr.push(row[i]);
+      if (row[i] !== 0) { arr.push(row[i]); ids.push(idRow[i]); }
     }
+    // Merge adjacent same values
     for (var i = 0; i < arr.length - 1; i++) {
       if (arr[i] === arr[i + 1]) {
         arr[i] *= 2;
         score += arr[i];
+        // Merged tile takes the first ID; second ID is discarded
         arr[i + 1] = 0;
+        ids[i + 1] = 0;
         i++;
       }
     }
-    var result = [];
+    // Pack non-zero results
+    var result = [], idResult = [];
     for (var i = 0; i < arr.length; i++) {
-      if (arr[i] !== 0) result.push(arr[i]);
+      if (arr[i] !== 0) { result.push(arr[i]); idResult.push(ids[i]); }
     }
-    while (result.length < 4) result.push(0);
-    return result;
+    while (result.length < 4) { result.push(0); idResult.push(0); }
+    return {val: result, id: idResult};
   }
 
   function move(dir) {
     var snapshot = grid.map(function(r) { return r.slice(); });
+    var idSnapshot = idGrid.map(function(r) { return r.slice(); });
 
     if (dir === 'left') {
-      for (var r = 0; r < 4; r++) grid[r] = slideLine(grid[r]);
+      for (var r = 0; r < 4; r++) {
+        var s = slideLine(grid[r], idGrid[r]);
+        grid[r] = s.val; idGrid[r] = s.id;
+      }
     } else if (dir === 'right') {
       for (var r = 0; r < 4; r++) {
-        grid[r] = slideLine(grid[r].slice().reverse()).reverse();
+        var s = slideLine(grid[r].slice().reverse(), idGrid[r].slice().reverse());
+        grid[r] = s.val.reverse(); idGrid[r] = s.id.reverse();
       }
     } else if (dir === 'up') {
       for (var c = 0; c < 4; c++) {
         var col = [grid[0][c], grid[1][c], grid[2][c], grid[3][c]];
-        var res = slideLine(col);
-        for (var r = 0; r < 4; r++) grid[r][c] = res[r];
+        var idCol = [idGrid[0][c], idGrid[1][c], idGrid[2][c], idGrid[3][c]];
+        var s = slideLine(col, idCol);
+        for (var r = 0; r < 4; r++) { grid[r][c] = s.val[r]; idGrid[r][c] = s.id[r]; }
       }
     } else if (dir === 'down') {
       for (var c = 0; c < 4; c++) {
         var col = [grid[3][c], grid[2][c], grid[1][c], grid[0][c]];
-        var res = slideLine(col);
-        for (var r = 0; r < 4; r++) grid[3 - r][c] = res[r];
+        var idCol = [idGrid[3][c], idGrid[2][c], idGrid[1][c], idGrid[0][c]];
+        var s = slideLine(col, idCol);
+        for (var r = 0; r < 4; r++) { grid[3 - r][c] = s.val[r]; idGrid[3 - r][c] = s.id[r]; }
       }
     }
 
@@ -355,7 +376,7 @@ body {
 
     prevGrid = snapshot;
 
-    // Detect merges: cells where value doubled from snapshot
+    // Detect merges: cell where value doubled AND ID changed (merged into another)
     mergedPos = [];
     for (var r = 0; r < 4; r++)
       for (var c = 0; c < 4; c++)
@@ -436,21 +457,34 @@ body {
     var totalWidth = container.clientWidth - padding * 2;
     var cellSize = (totalWidth - gap * 3) / 4;
 
-    // Clear previous tiles safely
-    while (layer.firstChild) layer.removeChild(layer.firstChild);
+    // Track which IDs are still in use
+    var seen = {};
 
     for (var r = 0; r < 4; r++) {
       for (var c = 0; c < 4; c++) {
         var val = grid[r][c];
-        if (val === 0) continue;
+        var tid = idGrid[r][c];
 
-        var tile = document.createElement('div');
-        tile.className = 'tile tile-' + (val <= 8192 ? val : 'super');
-        tile.textContent = val;
+        if (val === 0) continue;
+        seen[tid] = true;
 
         var x = c * (cellSize + gap);
         var y = r * (cellSize + gap);
+        var tile;
 
+        if (idToEl[tid]) {
+          // Recycle existing tile element — transition will animate position change
+          tile = idToEl[tid];
+        } else {
+          // New tile element
+          tile = document.createElement('div');
+          idToEl[tid] = tile;
+          layer.appendChild(tile);
+        }
+
+        // Update class and content
+        tile.className = 'tile tile-' + (val <= 8192 ? val : 'super');
+        tile.textContent = val;
         tile.style.width = cellSize + 'px';
         tile.style.height = cellSize + 'px';
         tile.style.left = x + 'px';
@@ -463,8 +497,14 @@ body {
         if (mergedPos && mergedPos.some(function(p) { return p.r === r && p.c === c; })) {
           tile.classList.add('tile-pop');
         }
+      }
+    }
 
-        layer.appendChild(tile);
+    // Remove tile elements whose IDs are no longer in the grid
+    for (var k in idToEl) {
+      if (!seen[k]) {
+        idToEl[k].remove();
+        delete idToEl[k];
       }
     }
 
