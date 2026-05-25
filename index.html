@@ -265,13 +265,13 @@ body {
 (function() {
   // ── Theme Config ──────────────────────────────
   var THEMES = [
-    { max: 16,  color: '#E74C3C', name: 'red' },
-    { max: 32,  color: '#F97316', name: 'orange' },
-    { max: 64,  color: '#F5B700', name: 'gold' },
-    { max: 128, color: '#56B870', name: 'green' },
-    { max: 256, color: '#27C6C2', name: 'teal' },
-    { max: 512, color: '#3B82F6', name: 'blue' },
-    { max: 1024,color: '#8B5CF6', name: 'purple' },
+    { max: 16,  color: '#F64136', palette: ['#FEE8E7','#FDD0CD','#FBB3AF','#FA918A','#F86B62','#F64136'], name: 'red' },
+    { max: 32,  color: '#FA6602', palette: ['#FEEDE1','#FED9C0','#FDC29A','#FCA66C','#FB883A','#FA6602'], name: 'orange' },
+    { max: 64,  color: '#F4C312', palette: ['#FEF8E3','#FCF0C4','#FBE7A0','#F9DC76','#F6D046','#F4C312'], name: 'gold' },
+    { max: 128, color: '#67C53F', palette: ['#EDF8E8','#D9F0CF','#C2E8B2','#A7DD90','#88D269','#67C53F'], name: 'green' },
+    { max: 256, color: '#1CB7B9', palette: ['#E4F6F7','#C6EDEE','#A4E2E3','#7BD5D6','#4EC7C8','#1CB7B9'], name: 'teal' },
+    { max: 512, color: '#3381F4', palette: ['#E7F0FE','#CCE0FC','#ADCDFB','#89B6F9','#609DF6','#3381F4'], name: 'blue' },
+    { max: 1024,color: '#9537E6', palette: ['#F2E7FC','#E4CDF9','#D5AFF5','#C28BF0','#AC63EC','#9537E6'], name: 'purple' },
     { max: 2048,color: '#E84AA8', name: 'magenta' },
     { max: 4096,color: '#D9A441', name: 'goldBlack' },
     { max: 8192,color: '#C9D3DC', name: 'platinum' },
@@ -356,11 +356,20 @@ body {
   }
 
   function tileColor(val, theme) {
+    // Use explicit palette if available
+    if (theme.palette) {
+      var step = Math.log2(val);
+      var minStep = 1;            // log2(2)
+      var maxStep = Math.log2(theme.max);
+      var t = Math.min(1, Math.max(0, (step - minStep) / (maxStep - minStep)));
+      var idx = Math.round(t * (theme.palette.length - 1));
+      return theme.palette[idx];
+    }
+    // Fallback interpolation for themes without explicit palettes (2048+)
     var step = Math.log2(val);
     var maxStep = Math.log2(Math.max(theme.max, val));
     var t = Math.max(0, Math.min(1, step / maxStep));
     var rgb = hexToRgb(theme.color);
-    // Interpolate from very light (tinted white) to saturated theme color
     var r = Math.round(lerp(250, rgb[0], t * 0.88));
     var g = Math.round(lerp(250, rgb[1], t * 0.88));
     var b = Math.round(lerp(250, rgb[2], t * 0.88));
