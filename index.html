@@ -265,7 +265,6 @@ body {
 (function() {
   // ── Theme Config ──────────────────────────────
   var THEMES = [
-    { max: 8,   color: '#776e65', name: 'default' },
     { max: 16,  color: '#E74C3C', name: 'red' },
     { max: 32,  color: '#F97316', name: 'orange' },
     { max: 64,  color: '#F5B700', name: 'gold' },
@@ -307,7 +306,7 @@ body {
   var bestTime = '';
   var statsData = [];
   var idGrid, idToEl, nextId;
-  var currentTheme = THEMES[0];
+  var currentTheme = { max: 2, color: '#776e65', name: 'default' };
   var debugThemeIdx = null; // null = auto, number = force specific theme
 
   function loadStats() {
@@ -347,6 +346,7 @@ body {
   }
 
   function getTheme(maxVal) {
+    if (maxVal < THEMES[0].max) return { max: 2, color: '#776e65', name: 'default' };
     var t = THEMES[0];
     for (var i = 0; i < THEMES.length; i++) {
       if (maxVal >= THEMES[i].max) t = THEMES[i];
