@@ -144,7 +144,7 @@ body {
 
 .grid-bg .cell {
   aspect-ratio: 1;
-  background: rgba(238, 228, 218, 0.40);
+  background: var(--theme-cell-bg, rgba(238,228,218,0.40));
   border-radius: 6px;
 }
 
@@ -514,6 +514,7 @@ body {
       root.setProperty('--theme-grid-bg', '#4a5360');
       root.setProperty('--theme-grid-glow', 'rgba(201,211,220,0.3)');
       root.setProperty('--theme-bg', '#e8ecf0');
+      root.setProperty('--theme-cell-bg', 'rgba(255,255,255,0.08)');
     } else if (theme.name === 'goldBlack') {
       root.setProperty('--theme-primary', '#D9A441');
       root.setProperty('--theme-primary-rgb', '217,164,65');
@@ -522,6 +523,7 @@ body {
       root.setProperty('--theme-grid-bg', '#2B2116');
       root.setProperty('--theme-grid-glow', 'rgba(217,164,65,0.25)');
       root.setProperty('--theme-bg', '#1a1815');
+      root.setProperty('--theme-cell-bg', 'rgba(255,255,255,0.06)');
     } else if (theme.name === 'rainbow') {
       root.setProperty('--theme-primary', '#888');
       root.setProperty('--theme-primary-rgb', '136,136,136');
@@ -530,6 +532,7 @@ body {
       root.setProperty('--theme-grid-bg', '#1a1a2e');
       root.setProperty('--theme-grid-glow', 'rgba(149,55,230,0.2)');
       root.setProperty('--theme-bg', '#0f0f1a');
+      root.setProperty('--theme-cell-bg', 'rgba(255,255,255,0.06)');
     } else {
       root.setProperty('--theme-primary', c);
       root.setProperty('--theme-primary-rgb', rgbStr);
@@ -549,6 +552,7 @@ body {
       root.setProperty('--theme-grid-bg', theme.max > 8 ? 'rgba(' + rgbStr + ',0.15)' : '#bbada0');
       root.setProperty('--theme-grid-glow', 'rgba(' + rgbStr + ',0.12)');
       root.setProperty('--theme-bg', '#faf8ef');
+      root.setProperty('--theme-cell-bg', 'rgba(238,228,218,0.40)');
     }
     // Start/stop platinum hue animation
     if (theme.name === 'platinum') startPlatinumAnim();
@@ -813,11 +817,7 @@ body {
 
         var bg = tileColor(val, theme);
 
-        if (theme.name === 'platinum' && val >= 16384) {
-          bg = '#e8ecf0';
-          tile.style.color = '#4a5568';
-          tile.style.boxShadow = 'inset 0 0 20px rgba(201,211,220,0.5), 0 0 10px rgba(201,211,220,0.3)';
-        } else if (theme.name === 'goldBlack' && val >= 8192) {
+        if (theme.name === 'goldBlack' && val >= 8192) {
           bg = '#2B2116';
           tile.style.color = '#D9A441';
           tile.style.border = '2px solid rgba(217,164,65,0.5)';
@@ -846,7 +846,7 @@ body {
         if (mergedPos && mergedPos.some(function(p) { return p.r === r && p.c === c; })) {
           tile.classList.add('tile-pop');
         }
-        if (val >= 4096 && (theme.name === 'platinum' || theme.name === 'goldBlack' || theme.name === 'rainbow')) {
+        if (val >= 4096 && (theme.name === 'goldBlack' || theme.name === 'rainbow')) {
           tile.classList.add('tile-glow');
         }
       }
