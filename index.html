@@ -790,15 +790,8 @@ body {
 
   function recordGame() {
     if (score <= 0) return;
-    // Deduplicate: only record if higher than any previously saved score
-    var topSaved = 0;
-    for (var i = 0; i < statsData.length; i++) {
-      if (statsData[i].score > topSaved) topSaved = statsData[i].score;
-    }
-    if (score > topSaved) {
-      statsData.push({time: Date.now(), score: score});
-      localStorage.setItem('stats2048', JSON.stringify(statsData));
-    }
+    statsData.push({time: Date.now(), score: score});
+    localStorage.setItem('stats2048', JSON.stringify(statsData));
   }
 
   function formatTime(ts) {
