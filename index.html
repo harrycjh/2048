@@ -631,21 +631,32 @@ body {
 
   // ── Platinum Hue Animation ────────────────────
   var PLATINUM_COLORS = ['#F64136','#FA6602','#F4C312','#67C53F','#1CB7B9','#3381F4','#9537E6'];
-  // Pyramid distribution: log2 → color index (0=red, 1=orange, 2=gold, 3=green, 4=teal, 5=blue, 6=purple)
-  var LOG2_COLOR_MAP = {
-     1: 0,
-     2: 1,  5: 1,
-     3: 2,  6: 2,  9: 2,
-     4: 3,  7: 3, 10: 3, 13: 3,
-     8: 4, 11: 4, 14: 4,
-    12: 5, 15: 5,
-    16: 6
+  // Pyramid distribution: log2 → float position on 0–6 rainbow
+  // Within same-color group, smaller values lean toward previous color, larger toward next
+  var LOG2_POS = {
+     1: 0.0,                   // red
+     2: 0.65,  5: 1.35,        // orange (4 leans red, 32 leans gold)
+     3: 1.65,  6: 2.0,  9: 2.35,  // gold (8 leans orange, 64 pure, 512 leans green)
+     4: 2.65,  7: 2.88, 10: 3.12, 13: 3.35, // green (16/128→gold, 1024/8192→teal)
+     8: 3.65, 11: 4.0, 14: 4.35,   // teal (256 leans green, 2048 pure, 16384 leans blue)
+    12: 4.65, 15: 5.35,            // blue (4096 leans teal, 32768 leans purple)
+    16: 6.0                        // purple
   };
 
   function getPlatinumColor(val) {
     var lg = Math.log2(val);
-    var idx = LOG2_COLOR_MAP[lg];
-    return PLATINUM_COLORS[idx !== undefined ? idx : 6];
+    var pos = LOG2_POS[lg];
+    if (pos === undefined) pos = 6.0;
+    var idx = Math.floor(pos);
+    if (idx >= PLATINUM_COLORS.length - 1) return PLATINUM_COLORS[PLATINUM_COLORS.length - 1];
+    var frac = pos - idx;
+    var a = hexToRgb(PLATINUM_COLORS[idx]);
+    var b = hexToRgb(PLATINUM_COLORS[idx + 1]);
+    return rgbToHex(
+      Math.round(lerp(a[0], b[0], frac)),
+      Math.round(lerp(a[1], b[1], frac)),
+      Math.round(lerp(a[2], b[2], frac))
+    );
   }
 
   function startPlatinumAnim() {
