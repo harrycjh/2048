@@ -445,6 +445,18 @@ body {
 
   function loadStats() {
     try { statsData = JSON.parse(localStorage.getItem('stats2048')) || []; } catch(e) { statsData = []; }
+    // Clean up: keep only strictly increasing milestone scores
+    var cleaned = [], maxSeen = 0;
+    for (var i = 0; i < statsData.length; i++) {
+      if (statsData[i].score > maxSeen) {
+        cleaned.push(statsData[i]);
+        maxSeen = statsData[i].score;
+      }
+    }
+    if (cleaned.length !== statsData.length) {
+      statsData = cleaned;
+      localStorage.setItem('stats2048', JSON.stringify(statsData));
+    }
     bestScore = parseInt(localStorage.getItem('best2048')) || 0;
     bestTime = localStorage.getItem('best2048time') || '';
     if (statsData.length === 0 && bestScore > 0) {
@@ -760,13 +772,23 @@ body {
   function updateBest() {
     if (score > bestScore) {
       bestScore = score;
-      var now = Date.now();
-      bestTime = formatTime(now);
+      bestTime = formatTime(Date.now());
       localStorage.setItem('best2048', bestScore);
       localStorage.setItem('best2048time', bestTime);
-      statsData.push({time: now, score: bestScore});
-      localStorage.setItem('stats2048', JSON.stringify(statsData));
       document.getElementById('bestTime').textContent = bestTime;
+    }
+  }
+
+  function recordGame() {
+    if (score <= 0) return;
+    // Deduplicate: only record if higher than any previously saved score
+    var topSaved = 0;
+    for (var i = 0; i < statsData.length; i++) {
+      if (statsData[i].score > topSaved) topSaved = statsData[i].score;
+    }
+    if (score > topSaved) {
+      statsData.push({time: Date.now(), score: score});
+      localStorage.setItem('stats2048', JSON.stringify(statsData));
     }
   }
 
@@ -796,11 +818,13 @@ body {
 
     if (!winShown && grid.some(function(r) { return r.some(function(v) { return v >= 2048; }); })) {
       winShown = true;
+      recordGame();
       overlay.classList.remove('hidden');
       overlayText.textContent = '你赢了！';
       overlayBtn.textContent = '继续游戏';
       overlayBtn.onclick = function() { overlay.classList.add('hidden'); };
     } else if (!hasMoves()) {
+      recordGame();
       overlay.classList.remove('hidden');
       overlayText.textContent = '游戏结束';
       overlayBtn.textContent = '再来一局';
