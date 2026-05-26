@@ -324,7 +324,7 @@ body {
     { max: 2048,color: '#E84AA8', name: 'magenta' },
     { max: 4096,color: '#C9D3DC', name: 'platinum' },
     { max: 8192,color: '#D9A441', name: 'goldBlack' },
-    { max: 16384,color: '#00E5FF', name: 'aurora' }
+    { max: 16384,color: '#9537E6', name: 'rainbow' }
   ];
 
   // ── Color Utilities ───────────────────────────
@@ -422,6 +422,24 @@ body {
   }
 
   function tileColor(val, theme) {
+    if (theme.name === 'rainbow') {
+      var rainbowColors = ['#F64136','#FA6602','#F4C312','#67C53F','#1CB7B9','#3381F4','#9537E6'];
+      var step = Math.log2(val);
+      var minStep = 1;
+      var maxStep = Math.log2(theme.max);
+      var t = Math.min(1, Math.max(0, (step - minStep) / (maxStep - minStep)));
+      var segment = t * (rainbowColors.length - 1);
+      var idx = Math.floor(segment);
+      if (idx >= rainbowColors.length - 1) return rainbowColors[rainbowColors.length - 1];
+      var frac = segment - idx;
+      var a = hexToRgb(rainbowColors[idx]);
+      var b = hexToRgb(rainbowColors[idx + 1]);
+      return rgbToHex(
+        Math.round(lerp(a[0], b[0], frac)),
+        Math.round(lerp(a[1], b[1], frac)),
+        Math.round(lerp(a[2], b[2], frac))
+      );
+    }
     if (theme.palette) {
       var step = Math.log2(val);
       var minStep = 1;
@@ -468,14 +486,14 @@ body {
       root.setProperty('--theme-grid-bg', '#2B2116');
       root.setProperty('--theme-grid-glow', 'rgba(217,164,65,0.25)');
       root.setProperty('--theme-bg', '#1a1815');
-    } else if (theme.name === 'aurora') {
-      root.setProperty('--theme-primary', '#00E5FF');
-      root.setProperty('--theme-primary-rgb', '0,229,255');
-      root.setProperty('--theme-title', '#00E5FF');
-      root.setProperty('--theme-score-bg', '#1a3a4a');
-      root.setProperty('--theme-grid-bg', '#0d2838');
-      root.setProperty('--theme-grid-glow', 'rgba(0,229,255,0.3)');
-      root.setProperty('--theme-bg', '#051520');
+    } else if (theme.name === 'rainbow') {
+      root.setProperty('--theme-primary', '#888');
+      root.setProperty('--theme-primary-rgb', '136,136,136');
+      root.setProperty('--theme-title', '#ddd');
+      root.setProperty('--theme-score-bg', '#2a2a3a');
+      root.setProperty('--theme-grid-bg', '#1a1a2e');
+      root.setProperty('--theme-grid-glow', 'rgba(149,55,230,0.2)');
+      root.setProperty('--theme-bg', '#0f0f1a');
     } else {
       root.setProperty('--theme-primary', c);
       root.setProperty('--theme-primary-rgb', rgbStr);
@@ -734,10 +752,9 @@ body {
           tile.style.color = '#D9A441';
           tile.style.border = '2px solid rgba(217,164,65,0.5)';
           tile.style.textShadow = '0 0 12px rgba(217,164,65,0.4)';
-        } else if (theme.name === 'aurora' && val >= 16384) {
-          bg = '#051520';
-          tile.style.color = '#00E5FF';
-          tile.style.boxShadow = '0 0 20px rgba(0,229,255,0.4), inset 0 0 15px rgba(139,92,246,0.2)';
+        } else if (theme.name === 'rainbow' && val >= 16384) {
+          tile.style.color = '#f9f6f2';
+          tile.style.boxShadow = '0 0 24px rgba(149,55,230,0.5)';
         } else {
           if (theme.name === 'platinum') {
             // Platinum theme: all tile numbers use dark text
@@ -760,7 +777,7 @@ body {
         if (mergedPos && mergedPos.some(function(p) { return p.r === r && p.c === c; })) {
           tile.classList.add('tile-pop');
         }
-        if (val >= 4096 && (theme.name === 'platinum' || theme.name === 'goldBlack' || theme.name === 'aurora')) {
+        if (val >= 4096 && (theme.name === 'platinum' || theme.name === 'goldBlack' || theme.name === 'rainbow')) {
           tile.classList.add('tile-glow');
         }
       }
