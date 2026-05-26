@@ -570,7 +570,7 @@ body {
           if (!tile) continue;
           var baseHsl = hexToHsl(tileColor(val, rainbowBase));
           baseHsl[1] = Math.min(100, baseHsl[1] + 10); // boost saturation
-          var h = (baseHsl[0] + hueOffset + (r * 4 + c) * 22.5) % 360;
+          var h = (baseHsl[0] + hueOffset) % 360;
           var bgColor = hslToHex(h, baseHsl[1], baseHsl[2]);
           tile.style.backgroundColor = bgColor;
           tile.style.color = '#f9f6f2';
