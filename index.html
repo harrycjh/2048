@@ -573,7 +573,7 @@ body {
           var h = (baseHsl[0] + hueOffset + (r * 4 + c) * 22.5) % 360;
           var bgColor = hslToHex(h, baseHsl[1], baseHsl[2]);
           tile.style.backgroundColor = bgColor;
-          tile.style.color = isDark(bgColor) ? '#f9f6f2' : '#4a5568';
+          tile.style.color = '#f9f6f2';
         }
       }
       animFrame = requestAnimationFrame(tick);
@@ -764,7 +764,7 @@ body {
   }
 
   function getFontSize(val) {
-    if (val >= 16384) return 24;
+    if (val >= 16384) return 30;
     if (val >= 8192)  return 28;
     if (val >= 1024)  return 32;
     if (val >= 128)   return 42;
@@ -827,8 +827,7 @@ body {
           tile.style.boxShadow = '0 0 24px rgba(149,55,230,0.5)';
         } else {
           if (theme.name === 'platinum') {
-            // Platinum theme: all tile numbers use dark text
-            tile.style.color = '#4a5568';
+            tile.style.color = '#f9f6f2';
           } else {
             tile.style.color = val >= 8 ? '#f9f6f2' : (isDark(bg) ? '#f9f6f2' : '#776e65');
           }
