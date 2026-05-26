@@ -322,9 +322,9 @@ body {
     { max: 512, color: '#3381F4', palette: ['#E7F0FE','#CCE0FC','#ADCDFB','#89B6F9','#609DF6','#3381F4'], name: 'blue' },
     { max: 1024,color: '#9537E6', palette: ['#F2E7FC','#E4CDF9','#D5AFF5','#C28BF0','#AC63EC','#9537E6'], name: 'purple' },
     { max: 2048,color: '#E84AA8', name: 'magenta' },
-    { max: 4096,color: '#C9D3DC', name: 'platinum' },
+    { max: 4096,color: '#9537E6', name: 'rainbow' },
     { max: 8192,color: '#D9A441', name: 'goldBlack' },
-    { max: 16384,color: '#9537E6', name: 'rainbow' }
+    { max: 16384,color: '#C9D3DC', name: 'platinum' }
   ];
 
   // ── Color Utilities ───────────────────────────
@@ -743,7 +743,7 @@ body {
 
         var bg = tileColor(val, theme);
 
-        if (theme.name === 'platinum' && val >= 4096) {
+        if (theme.name === 'platinum' && val >= 16384) {
           bg = '#e8ecf0';
           tile.style.color = '#4a5568';
           tile.style.boxShadow = 'inset 0 0 20px rgba(201,211,220,0.5), 0 0 10px rgba(201,211,220,0.3)';
@@ -752,7 +752,7 @@ body {
           tile.style.color = '#D9A441';
           tile.style.border = '2px solid rgba(217,164,65,0.5)';
           tile.style.textShadow = '0 0 12px rgba(217,164,65,0.4)';
-        } else if (theme.name === 'rainbow' && val >= 16384) {
+        } else if (theme.name === 'rainbow' && val >= 4096) {
           tile.style.color = '#f9f6f2';
           tile.style.boxShadow = '0 0 24px rgba(149,55,230,0.5)';
         } else {
