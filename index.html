@@ -199,26 +199,19 @@ body {
 }
 
 /* Merge light sweep for Level 12 */
-.merge-sweep {
+.cyber-particle {
   position: absolute;
   pointer-events: none;
   z-index: 5;
-  border-radius: 2px;
+  border-radius: 3px;
+  --dx: 0px;
+  --dy: 0px;
   opacity: 0;
 }
 
-.merge-sweep.sweep-right { animation: sweepH 0.35s ease-out forwards; transform-origin: left center; }
-.merge-sweep.sweep-left  { animation: sweepH 0.35s ease-out forwards; transform-origin: right center; }
-.merge-sweep.sweep-down  { animation: sweepV 0.35s ease-out forwards; transform-origin: top center; }
-.merge-sweep.sweep-up    { animation: sweepV 0.35s ease-out forwards; transform-origin: bottom center; }
-
-@keyframes sweepH {
-  0%   { transform: scaleX(0); opacity: 0.9; }
-  100% { transform: scaleX(1); opacity: 0; }
-}
-@keyframes sweepV {
-  0%   { transform: scaleY(0); opacity: 0.9; }
-  100% { transform: scaleY(1); opacity: 0; }
+@keyframes particleOut {
+  0%   { transform: translate(0, 0); opacity: 0.9; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
 }
 
 .overlay {
@@ -713,14 +706,9 @@ body {
     hueOffset = 0;
   }
 
-  // ── Merge Light Sweep (Level 12: from tile border, 50% distance, animated color, full edge thickness) ──
+  // ── Merge Light Sweep (Level 12: cyber block particles from tile borders) ──
   function mergeSweep(r, c) {
     if (currentTheme.name !== 'platinum') return;
-    var val = grid[r][c];
-    var baseHsl = hexToHsl(getPlatinumColor(val));
-    baseHsl[1] = Math.min(100, baseHsl[1] + 10);
-    var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
-    var layer = document.getElementById('tileLayer');
     var container = document.getElementById('gridContainer');
     var padding = 15, g = 15;
     var size = container.clientWidth - padding * 2;
@@ -733,20 +721,61 @@ body {
     var halfD = (size - y - cellSize) / 2;
     var halfU = y / 2;
 
-    // One sweep per direction, full cellSize thickness
-    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y, halfR, cellSize);
-    if (x > 0)               addSweep(layer, color, 'sweep-left',  x - halfL, y, halfL, cellSize);
-    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x, y + cellSize, cellSize, halfD);
-    if (y > 0)               addSweep(layer, color, 'sweep-up',   x, y - halfU, cellSize, halfU);
+    var ps = Math.max(4, Math.round(cellSize / 12));
+    var n = Math.max(3, Math.round(cellSize / (ps + 3)));
+
+    var val = grid[r][c];
+    var baseHsl = hexToHsl(getPlatinumColor(val));
+    baseHsl[1] = Math.min(100, baseHsl[1] + 10);
+
+    // Right edge
+    if (x + cellSize < size) {
+      for (var i = 0; i < n; i++) {
+        var py = y + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
+        var s = ps + (Math.random() - 0.5) * ps * 0.4;
+        var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
+        spawnParticle(color, x + cellSize, py, s, halfR * (0.7 + Math.random() * 0.3), 0, i * 0.035);
+      }
+    }
+    // Left edge
+    if (x > 0) {
+      for (var i = 0; i < n; i++) {
+        var py = y + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
+        var s = ps + (Math.random() - 0.5) * ps * 0.4;
+        var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
+        spawnParticle(color, x - s, py, s, -halfL * (0.7 + Math.random() * 0.3), 0, i * 0.035);
+      }
+    }
+    // Bottom edge
+    if (y + cellSize < size) {
+      for (var i = 0; i < n; i++) {
+        var px = x + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
+        var s = ps + (Math.random() - 0.5) * ps * 0.4;
+        var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
+        spawnParticle(color, px, y + cellSize, s, 0, halfD * (0.7 + Math.random() * 0.3), i * 0.035);
+      }
+    }
+    // Top edge
+    if (y > 0) {
+      for (var i = 0; i < n; i++) {
+        var px = x + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
+        var s = ps + (Math.random() - 0.5) * ps * 0.4;
+        var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
+        spawnParticle(color, px, y - s, s, 0, -halfU * (0.7 + Math.random() * 0.3), i * 0.035);
+      }
+    }
   }
 
-  function addSweep(layer, color, cls, left, top, width, height) {
+  function spawnParticle(color, left, top, size, dx, dy, delay) {
+    var layer = document.getElementById('tileLayer');
     var el = document.createElement('div');
-    el.className = 'merge-sweep ' + cls;
+    el.className = 'cyber-particle';
     el.style.cssText =
       'left:' + left + 'px;top:' + top + 'px;' +
-      'width:' + width + 'px;height:' + height + 'px;' +
-      'background:' + color + ';';
+      'width:' + size + 'px;height:' + size + 'px;' +
+      'background:' + color + ';' +
+      '--dx:' + dx + 'px;--dy:' + dy + 'px;' +
+      'animation: particleOut 0.45s ease-out ' + delay + 's forwards;';
     layer.appendChild(el);
     el.addEventListener('animationend', function() { el.remove(); });
   }
