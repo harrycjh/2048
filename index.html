@@ -1098,7 +1098,11 @@ body {
             tile.style.textShadow = '';
           }
         }
-        tile.style.backgroundColor = bg;
+        if (theme.name === 'platinum') {
+          tile.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.02) 55%, transparent 65%), ' + bg;
+        } else {
+          tile.style.backgroundColor = bg;
+        }
 
         var fs = isSmall ? Math.round(getFontSize(val) * 0.7) : getFontSize(val);
         tile.style.fontSize = fs + 'px';
