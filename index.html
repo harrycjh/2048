@@ -846,9 +846,6 @@ body {
         if (mergedPos && mergedPos.some(function(p) { return p.r === r && p.c === c; })) {
           tile.classList.add('tile-pop');
         }
-        if (val >= 4096 && (theme.name === 'goldBlack' || theme.name === 'rainbow')) {
-          tile.classList.add('tile-glow');
-        }
       }
     }
 
