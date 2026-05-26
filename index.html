@@ -515,7 +515,10 @@ body {
     for (var k in idToEl) { idToEl[k].remove(); }
     idToEl = {};
     nextId = 1;
-    exitDebug();
+    // Exit demo mode but keep the theme level
+    debugMode = false;
+    document.getElementById('paletteStrip').classList.remove('visible');
+    document.getElementById('paletteStrip').innerHTML = '';
     stopPlatinumAnim();
     addTile();
     addTile();
