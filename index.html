@@ -788,6 +788,15 @@ body {
 
   function getRank() {
     var maxVal = getMaxVal();
+    if (score > 0 && statsData.length > 0) {
+      // Collect all historical best scores + current score, sort descending
+      var allScores = [];
+      for (var i = 0; i < statsData.length; i++) allScores.push(statsData[i].score);
+      if (allScores.indexOf(score) === -1) allScores.push(score);
+      allScores.sort(function(a, b) { return b - a; });
+      var pos = allScores.indexOf(score) + 1;
+      if (pos <= 10) return 'RANK #' + pos;
+    }
     for (var i = 0; i < RANKS.length; i++) {
       if (maxVal >= RANKS[i].v) return RANKS[i].t;
     }
