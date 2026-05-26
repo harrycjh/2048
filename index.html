@@ -101,6 +101,15 @@ body {
   line-height: 1.2;
 }
 
+.score-rank {
+  font-size: 9px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
 .controls {
   display: flex;
   justify-content: space-between;
@@ -276,7 +285,7 @@ body {
       <div class="level" id="levelText">LEVEL 1</div>
     </div>
     <div class="scores">
-      <div class="score-box">SCORE<span id="score">0</span></div>
+      <div class="score-box">SCORE<span id="score">0</span><div class="score-rank" id="scoreRank"></div></div>
       <div class="score-box">BEST<span id="best">0</span><div class="best-time" id="bestTime"></div></div>
     </div>
   </div>
@@ -760,10 +769,36 @@ body {
   }
 
   // ── Render ────────────────────────────────────
+  var RANKS = [
+    { v: 32768, t: '超凡入圣' },
+    { v: 16384, t: '天下无敌' },
+    { v: 8192,  t: '出神入化' },
+    { v: 4096,  t: '登峰造极' },
+    { v: 2048,  t: '一代宗师' },
+    { v: 1024,  t: '炉火纯青' },
+    { v: 512,   t: '技艺超群' },
+    { v: 256,   t: '大展身手' },
+    { v: 128,   t: '势如破竹' },
+    { v: 64,    t: '小有成就' },
+    { v: 32,    t: '步步为营' },
+    { v: 16,    t: '渐入佳境' },
+    { v: 8,     t: '初露锋芒' },
+    { v: 4,     t: '小试牛刀' }
+  ];
+
+  function getRank() {
+    var maxVal = getMaxVal();
+    for (var i = 0; i < RANKS.length; i++) {
+      if (maxVal >= RANKS[i].v) return RANKS[i].t;
+    }
+    return '初来乍到';
+  }
+
   function updateUI() {
     document.getElementById('score').textContent = score;
     document.getElementById('best').textContent = bestScore;
     document.getElementById('bestTime').textContent = bestTime;
+    document.getElementById('scoreRank').textContent = getRank();
     renderTiles();
   }
 
