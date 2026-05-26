@@ -734,7 +734,7 @@ body {
         var py = y + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
         var s = ps + (Math.random() - 0.5) * ps * 0.4;
         var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
-        spawnParticle(color, x + cellSize, py, s, halfR * (0.7 + Math.random() * 0.3), 0, i * 0.035);
+        spawnParticle(color, x + cellSize, py, s, halfR * (0.7 + Math.random() * 0.3), 0, 0);
       }
     }
     // Left edge
@@ -743,7 +743,7 @@ body {
         var py = y + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
         var s = ps + (Math.random() - 0.5) * ps * 0.4;
         var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
-        spawnParticle(color, x - s, py, s, -halfL * (0.7 + Math.random() * 0.3), 0, i * 0.035);
+        spawnParticle(color, x - s, py, s, -halfL * (0.7 + Math.random() * 0.3), 0, 0);
       }
     }
     // Bottom edge
@@ -752,7 +752,7 @@ body {
         var px = x + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
         var s = ps + (Math.random() - 0.5) * ps * 0.4;
         var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
-        spawnParticle(color, px, y + cellSize, s, 0, halfD * (0.7 + Math.random() * 0.3), i * 0.035);
+        spawnParticle(color, px, y + cellSize, s, 0, halfD * (0.7 + Math.random() * 0.3), 0);
       }
     }
     // Top edge
@@ -761,7 +761,7 @@ body {
         var px = x + (cellSize / (n + 1)) * (i + 1) - ps / 2 + (Math.random() - 0.5) * ps * 0.5;
         var s = ps + (Math.random() - 0.5) * ps * 0.4;
         var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
-        spawnParticle(color, px, y - s, s, 0, -halfU * (0.7 + Math.random() * 0.3), i * 0.035);
+        spawnParticle(color, px, y - s, s, 0, -halfU * (0.7 + Math.random() * 0.3), 0);
       }
     }
   }
