@@ -713,11 +713,13 @@ body {
     hueOffset = 0;
   }
 
-  // ── Merge Light Sweep (Level 12: from tile border outward) ──
+  // ── Merge Light Sweep (Level 12: from tile border, 50% distance, animated color) ──
   function mergeSweep(r, c) {
     if (currentTheme.name !== 'platinum') return;
     var val = grid[r][c];
-    var color = getPlatinumColor(val);
+    var baseHsl = hexToHsl(getPlatinumColor(val));
+    baseHsl[1] = Math.min(100, baseHsl[1] + 10);
+    var color = hslToHex((baseHsl[0] + hueOffset) % 360, baseHsl[1], baseHsl[2]);
     var layer = document.getElementById('tileLayer');
     var container = document.getElementById('gridContainer');
     var padding = 15, g = 15;
@@ -727,17 +729,19 @@ body {
     var y = r * (cellSize + g);
     var sw = Math.max(3, cellSize * 0.08);
 
-    // Sweeps shoot from merged tile's border lines and travel outward
-    // Horizontal sweeps along the tile's top & bottom border lines
-    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y, size - x - cellSize, sw);
-    if (x > 0)               addSweep(layer, color, 'sweep-left',  0, y, x, sw);
-    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y + cellSize - sw, size - x - cellSize, sw);
-    if (x > 0)               addSweep(layer, color, 'sweep-left',  0, y + cellSize - sw, x, sw);
-    // Vertical sweeps along the tile's left & right border lines
-    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x, y + cellSize, sw, size - y - cellSize);
-    if (y > 0)               addSweep(layer, color, 'sweep-up',   x, 0, sw, y);
-    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x + cellSize - sw, y + cellSize, sw, size - y - cellSize);
-    if (y > 0)               addSweep(layer, color, 'sweep-up',   x + cellSize - sw, 0, sw, y);
+    var halfR = (size - x - cellSize) / 2;
+    var halfL = x / 2;
+    var halfD = (size - y - cellSize) / 2;
+    var halfU = y / 2;
+
+    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y, halfR, sw);
+    if (x > 0)               addSweep(layer, color, 'sweep-left',  x - halfL, y, halfL, sw);
+    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y + cellSize - sw, halfR, sw);
+    if (x > 0)               addSweep(layer, color, 'sweep-left',  x - halfL, y + cellSize - sw, halfL, sw);
+    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x, y + cellSize, sw, halfD);
+    if (y > 0)               addSweep(layer, color, 'sweep-up',   x, y - halfU, sw, halfU);
+    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x + cellSize - sw, y + cellSize, sw, halfD);
+    if (y > 0)               addSweep(layer, color, 'sweep-up',   x + cellSize - sw, y - halfU, sw, halfU);
   }
 
   function addSweep(layer, color, cls, left, top, width, height) {
