@@ -269,6 +269,45 @@ body {
 
 .stats-panel .btn { margin-top: 16px; }
 
+.top10-list {
+  width: 380px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  margin-top: 12px;
+  padding: 8px 0;
+}
+
+.top10-list .rank-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  font-size: 14px;
+  color: #776e65;
+}
+
+.top10-list .rank-row .rank-num {
+  font-weight: 700;
+  width: 32px;
+  color: #bbada0;
+}
+
+.top10-list .rank-row .rank-score {
+  font-weight: 700;
+  flex: 1;
+}
+
+.top10-list .rank-row .rank-time {
+  font-size: 12px;
+  color: #bbada0;
+}
+
+.top10-list .rank-row:nth-child(1) .rank-num { color: #edc22e; }
+.top10-list .rank-row:nth-child(2) .rank-num { color: #a0a0a0; }
+.top10-list .rank-row:nth-child(3) .rank-num { color: #cd7f32; }
+
 @media (max-width: 520px) {
   .container { width: 100%; }
   .header h1 { font-size: 48px; }
@@ -316,6 +355,7 @@ body {
 <div class="stats-panel" id="statsPanel">
   <h2>最高分趋势</h2>
   <canvas id="statsCanvas" width="380" height="240"></canvas>
+  <div class="top10-list" id="top10List"></div>
   <button class="btn" id="statsCloseBtn">关闭</button>
 </div>
 
@@ -966,6 +1006,7 @@ body {
   document.getElementById('statsBtn').addEventListener('click', function() {
     document.getElementById('statsPanel').classList.add('visible');
     drawChart();
+    showTop10();
   });
 
   document.getElementById('statsCloseBtn').addEventListener('click', function() {
@@ -1061,6 +1102,28 @@ body {
     if (r <= 2) return 2 * mag;
     if (r <= 5) return 5 * mag;
     return 10 * mag;
+  }
+
+  function showTop10() {
+    var list = document.getElementById('top10List');
+    var data = statsData.slice().sort(function(a, b) { return b.score - a.score; });
+    var top10 = data.slice(0, 10);
+    if (top10.length === 0) {
+      list.innerHTML = '<div class="rank-row" style="justify-content:center;color:#bbada0;">暂无历史记录</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < top10.length; i++) {
+      var d = new Date(top10[i].time);
+      var pad = function(n) { return n < 10 ? '0' + n : n; };
+      var timeStr = (d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      html += '<div class="rank-row">' +
+        '<span class="rank-num">' + (i + 1) + '</span>' +
+        '<span class="rank-score">' + top10[i].score.toLocaleString() + '</span>' +
+        '<span class="rank-time">' + timeStr + '</span>' +
+        '</div>';
+    }
+    list.innerHTML = html;
   }
 
   // ── Start ─────────────────────────────────────
