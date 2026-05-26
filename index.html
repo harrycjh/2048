@@ -783,14 +783,13 @@ body {
   });
 
   var touchStartX, touchStartY;
-  var gridEl = document.getElementById('gridContainer');
 
-  gridEl.addEventListener('touchstart', function(e) {
+  document.addEventListener('touchstart', function(e) {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
   }, {passive: true});
 
-  gridEl.addEventListener('touchend', function(e) {
+  document.addEventListener('touchend', function(e) {
     if (touchStartX == null) return;
     var dx = e.changedTouches[0].clientX - touchStartX;
     var dy = e.changedTouches[0].clientY - touchStartY;
