@@ -713,7 +713,7 @@ body {
     hueOffset = 0;
   }
 
-  // ── Merge Light Sweep ──────────────────────────
+  // ── Merge Light Sweep (Level 12 border effect) ──
   function mergeSweep(r, c) {
     if (currentTheme.name !== 'platinum') return;
     var val = grid[r][c];
@@ -721,21 +721,23 @@ body {
     var layer = document.getElementById('tileLayer');
     var container = document.getElementById('gridContainer');
     var padding = 15, gap = 15;
-    var size = container.clientWidth - padding * 2; // grid area = square
+    var size = container.clientWidth - padding * 2;
     var cellSize = (size - gap * 3) / 4;
     var x = c * (cellSize + gap);
     var y = r * (cellSize + gap);
+    var midX = x + cellSize / 2;
+    var midY = y + cellSize / 2;
+    var sw = Math.max(3, cellSize * 0.08); // sweep thickness
 
-    // Right: from tile right edge to grid right edge
-    var rightW = size - (x + cellSize);
-    if (rightW > 0) addSweep(layer, color, 'sweep-right', x + cellSize, y + cellSize * 0.45, rightW, cellSize * 0.1);
-    // Left: from grid left edge to tile left edge
-    if (x > 0) addSweep(layer, color, 'sweep-left', 0, y + cellSize * 0.45, x, cellSize * 0.1);
-    // Down: from tile bottom edge to grid bottom edge
-    var downH = size - (y + cellSize);
-    if (downH > 0) addSweep(layer, color, 'sweep-down', x + cellSize * 0.45, y + cellSize, cellSize * 0.1, downH);
-    // Up: from grid top edge to tile top edge
-    if (y > 0) addSweep(layer, color, 'sweep-up', x + cellSize * 0.45, 0, cellSize * 0.1, y);
+    // Sweeps travel along the 4 outer borders from the merge projection
+    // Top border: rightward from merge column
+    if (midX < size) addSweep(layer, color, 'sweep-right', midX, 0, size - midX, sw);
+    // Right border: downward from merge row
+    if (midY < size) addSweep(layer, color, 'sweep-down', size - sw, midY, sw, size - midY);
+    // Bottom border: leftward from merge column
+    if (midX > 0) addSweep(layer, color, 'sweep-left', 0, size - sw, midX, sw);
+    // Left border: upward from merge row
+    if (midY > 0) addSweep(layer, color, 'sweep-up', 0, 0, sw, midY);
   }
 
   function addSweep(layer, color, cls, left, top, width, height) {
