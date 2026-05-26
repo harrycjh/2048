@@ -1040,18 +1040,24 @@ body {
     } else {
       debugThemeIdx = (debugThemeIdx + 1) % THEMES.length;
     }
-    // Fill grid with powers of 2: 2,4,8,...,65536
-    for (var r = 0; r < 4; r++) {
-      for (var c = 0; c < 4; c++) {
-        var i = r * 4 + c;
-        var v = Math.pow(2, i + 1);
-        grid[r][c] = v;
-        idGrid[r][c] = i + 1;
+    var theme = THEMES[debugThemeIdx];
+    var maxN = theme.name === 'platinum' ? 16 : Math.log2(theme.max);
+    // Clear grid
+    for (var cr = 0; cr < 4; cr++)
+      for (var cc = 0; cc < 4; cc++)
+        grid[cr][cc] = idGrid[cr][cc] = 0;
+    // Fill sequential powers of 2 up to the theme's max
+    var n = 0;
+    for (var rr = 0; rr < 4 && n < maxN; rr++) {
+      for (var cc2 = 0; cc2 < 4 && n < maxN; cc2++) {
+        n++;
+        grid[rr][cc2] = Math.pow(2, n);
+        idGrid[rr][cc2] = n;
       }
     }
-    nextId = 17;
+    nextId = n + 1;
     applyTheme();
-    showPalette(THEMES[debugThemeIdx]);
+    showPalette(theme);
     updateUI();
   });
 
