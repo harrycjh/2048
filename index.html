@@ -713,7 +713,7 @@ body {
     hueOffset = 0;
   }
 
-  // ── Merge Light Sweep (Level 12: from tile border, 50% distance, animated color) ──
+  // ── Merge Light Sweep (Level 12: from tile border, 50% distance, animated color, full edge thickness) ──
   function mergeSweep(r, c) {
     if (currentTheme.name !== 'platinum') return;
     var val = grid[r][c];
@@ -727,21 +727,17 @@ body {
     var cellSize = (size - g * 3) / 4;
     var x = c * (cellSize + g);
     var y = r * (cellSize + g);
-    var sw = Math.max(3, cellSize * 0.08);
 
     var halfR = (size - x - cellSize) / 2;
     var halfL = x / 2;
     var halfD = (size - y - cellSize) / 2;
     var halfU = y / 2;
 
-    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y, halfR, sw);
-    if (x > 0)               addSweep(layer, color, 'sweep-left',  x - halfL, y, halfL, sw);
-    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y + cellSize - sw, halfR, sw);
-    if (x > 0)               addSweep(layer, color, 'sweep-left',  x - halfL, y + cellSize - sw, halfL, sw);
-    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x, y + cellSize, sw, halfD);
-    if (y > 0)               addSweep(layer, color, 'sweep-up',   x, y - halfU, sw, halfU);
-    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x + cellSize - sw, y + cellSize, sw, halfD);
-    if (y > 0)               addSweep(layer, color, 'sweep-up',   x + cellSize - sw, y - halfU, sw, halfU);
+    // One sweep per direction, full cellSize thickness
+    if (x + cellSize < size) addSweep(layer, color, 'sweep-right', x + cellSize, y, halfR, cellSize);
+    if (x > 0)               addSweep(layer, color, 'sweep-left',  x - halfL, y, halfL, cellSize);
+    if (y + cellSize < size) addSweep(layer, color, 'sweep-down', x, y + cellSize, cellSize, halfD);
+    if (y > 0)               addSweep(layer, color, 'sweep-up',   x, y - halfU, cellSize, halfU);
   }
 
   function addSweep(layer, color, cls, left, top, width, height) {
