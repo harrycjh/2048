@@ -630,9 +630,26 @@ body {
   }
 
   // ── Platinum Hue Animation ────────────────────
+  var PLATINUM_COLORS = ['#F64136','#FA6602','#F4C312','#67C53F','#1CB7B9','#3381F4','#9537E6'];
+  // Pyramid distribution: log2 → color index (0=red, 1=orange, 2=gold, 3=green, 4=teal, 5=blue, 6=purple)
+  var LOG2_COLOR_MAP = {
+     1: 0,
+     2: 1,  5: 1,
+     3: 2,  6: 2,  9: 2,
+     4: 3,  7: 3, 10: 3, 13: 3,
+     8: 4, 11: 4, 14: 4,
+    12: 5, 15: 5,
+    16: 6
+  };
+
+  function getPlatinumColor(val) {
+    var lg = Math.log2(val);
+    var idx = LOG2_COLOR_MAP[lg];
+    return PLATINUM_COLORS[idx !== undefined ? idx : 6];
+  }
+
   function startPlatinumAnim() {
     if (animFrame) return;
-    var rainbowBase = { max: 16384, color: '#9537E6', name: 'rainbow' };
     function tick() {
       hueOffset = (hueOffset + 0.6) % 360;
       for (var r = 0; r < 4; r++) {
@@ -642,11 +659,10 @@ body {
           var tid = idGrid[r][c];
           var tile = idToEl[tid];
           if (!tile) continue;
-          var baseHsl = hexToHsl(tileColor(val, rainbowBase));
-          baseHsl[1] = Math.min(100, baseHsl[1] + 10); // boost saturation
+          var baseHsl = hexToHsl(getPlatinumColor(val));
+          baseHsl[1] = Math.min(100, baseHsl[1] + 10);
           var h = (baseHsl[0] + hueOffset) % 360;
-          var bgColor = hslToHex(h, baseHsl[1], baseHsl[2]);
-          tile.style.backgroundColor = bgColor;
+          tile.style.backgroundColor = hslToHex(h, baseHsl[1], baseHsl[2]);
           tile.style.color = '#f9f6f2';
         }
       }
@@ -925,7 +941,7 @@ body {
         tile.style.top = y + 'px';
         tile.style.lineHeight = cellSize + 'px';
 
-        var bg = tileColor(val, theme);
+        var bg = theme.name === 'platinum' ? getPlatinumColor(val) : tileColor(val, theme);
 
         if (theme.name === 'goldBlack' && val >= 8192) {
           bg = '#2B2116';
