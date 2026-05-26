@@ -445,12 +445,21 @@ body {
 
   function loadStats() {
     try { statsData = JSON.parse(localStorage.getItem('stats2048')) || []; } catch(e) { statsData = []; }
-    // Clean up: keep only strictly increasing milestone scores
-    var cleaned = [], maxSeen = 0;
+    // Clean up: keep only scores from different game sessions
+    // (>= 2 min apart OR score at least 5x previous)
+    var cleaned = [];
     for (var i = 0; i < statsData.length; i++) {
-      if (statsData[i].score > maxSeen) {
+      if (cleaned.length === 0) {
         cleaned.push(statsData[i]);
-        maxSeen = statsData[i].score;
+      } else {
+        var last = cleaned[cleaned.length - 1];
+        var gapMin = (statsData[i].time - last.time) / 60000;
+        if (gapMin >= 2 || statsData[i].score >= last.score * 5) {
+          cleaned.push(statsData[i]);
+        } else if (statsData[i].score > last.score) {
+          // Replace the last entry with this higher score (same session)
+          cleaned[cleaned.length - 1] = statsData[i];
+        }
       }
     }
     if (cleaned.length !== statsData.length) {
