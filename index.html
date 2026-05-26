@@ -343,6 +343,39 @@ body {
     }).join('');
   }
 
+  function hexToHsl(hex) {
+    var rgb = hexToRgb(hex);
+    var r = rgb[0] / 255, g = rgb[1] / 255, b = rgb[2] / 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+    }
+    return [h * 360, s * 100, l * 100];
+  }
+
+  function hslToHex(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s /= 100; l /= 100;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    var m = l - c / 2;
+    var r2, g2, b2;
+    if (h < 60)      { r2 = c; g2 = x; b2 = 0; }
+    else if (h < 120) { r2 = x; g2 = c; b2 = 0; }
+    else if (h < 180) { r2 = 0; g2 = c; b2 = x; }
+    else if (h < 240) { r2 = 0; g2 = x; b2 = c; }
+    else if (h < 300) { r2 = x; g2 = 0; b2 = c; }
+    else              { r2 = c; g2 = 0; b2 = x; }
+    return rgbToHex(Math.round((r2 + m) * 255), Math.round((g2 + m) * 255), Math.round((b2 + m) * 255));
+  }
+
   function isDark(hex) {
     var rgb = hexToRgb(hex);
     return (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) < 150;
@@ -358,6 +391,8 @@ body {
   var currentTheme = { max: 2, color: '#776e65', name: 'default' };
   var debugThemeIdx = null; // null = auto mode, number = force specific theme
   var debugMode = false;    // true = grid filled with sequential demo tiles
+  var hueOffset = 0;        // animation hue offset for platinum theme
+  var animFrame = null;     // requestAnimationFrame ID
 
   function loadStats() {
     try { statsData = JSON.parse(localStorage.getItem('stats2048')) || []; } catch(e) { statsData = []; }
@@ -388,6 +423,7 @@ body {
     idToEl = {};
     nextId = 1;
     exitDebug();
+    stopPlatinumAnim();
     addTile();
     addTile();
     applyTheme();
@@ -514,6 +550,40 @@ body {
       root.setProperty('--theme-grid-glow', 'rgba(' + rgbStr + ',0.12)');
       root.setProperty('--theme-bg', '#faf8ef');
     }
+    // Start/stop platinum hue animation
+    if (theme.name === 'platinum') startPlatinumAnim();
+    else stopPlatinumAnim();
+  }
+
+  // ── Platinum Hue Animation ────────────────────
+  function startPlatinumAnim() {
+    if (animFrame) return;
+    var rainbowBase = { max: 16384, color: '#9537E6', name: 'rainbow' };
+    function tick() {
+      hueOffset = (hueOffset + 0.6) % 360;
+      for (var r = 0; r < 4; r++) {
+        for (var c = 0; c < 4; c++) {
+          var val = grid[r][c];
+          if (val === 0) continue;
+          var tid = idGrid[r][c];
+          var tile = idToEl[tid];
+          if (!tile) continue;
+          var baseHsl = hexToHsl(tileColor(val, rainbowBase));
+          baseHsl[1] = Math.min(100, baseHsl[1] + 10); // boost saturation
+          var h = (baseHsl[0] + hueOffset + (r * 4 + c) * 22.5) % 360;
+          var bgColor = hslToHex(h, baseHsl[1], baseHsl[2]);
+          tile.style.backgroundColor = bgColor;
+          tile.style.color = isDark(bgColor) ? '#f9f6f2' : '#4a5568';
+        }
+      }
+      animFrame = requestAnimationFrame(tick);
+    }
+    animFrame = requestAnimationFrame(tick);
+  }
+
+  function stopPlatinumAnim() {
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+    hueOffset = 0;
   }
 
   // ── Palette Strip (debug) ─────────────────────
