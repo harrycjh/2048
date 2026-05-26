@@ -321,8 +321,8 @@ body {
     { max: 512, color: '#3381F4', palette: ['#E7F0FE','#CCE0FC','#ADCDFB','#89B6F9','#609DF6','#3381F4'], name: 'blue' },
     { max: 1024,color: '#9537E6', palette: ['#F2E7FC','#E4CDF9','#D5AFF5','#C28BF0','#AC63EC','#9537E6'], name: 'purple' },
     { max: 2048,color: '#E84AA8', name: 'magenta' },
-    { max: 4096,color: '#D9A441', name: 'goldBlack' },
-    { max: 8192,color: '#C9D3DC', name: 'platinum' },
+    { max: 4096,color: '#C9D3DC', name: 'platinum' },
+    { max: 8192,color: '#D9A441', name: 'goldBlack' },
     { max: 16384,color: '#00E5FF', name: 'aurora' }
   ];
 
@@ -451,15 +451,7 @@ body {
     // Level indicator
     document.getElementById('levelText').textContent = 'LEVEL ' + getLevel(theme);
 
-    if (theme.name === 'goldBlack') {
-      root.setProperty('--theme-primary', '#D9A441');
-      root.setProperty('--theme-primary-rgb', '217,164,65');
-      root.setProperty('--theme-title', '#D9A441');
-      root.setProperty('--theme-score-bg', '#3c3528');
-      root.setProperty('--theme-grid-bg', '#2B2116');
-      root.setProperty('--theme-grid-glow', 'rgba(217,164,65,0.25)');
-      root.setProperty('--theme-bg', '#1a1815');
-    } else if (theme.name === 'platinum') {
+    if (theme.name === 'platinum') {
       root.setProperty('--theme-primary', '#8A9BA8');
       root.setProperty('--theme-primary-rgb', '138,155,168');
       root.setProperty('--theme-title', '#C9D3DC');
@@ -467,6 +459,14 @@ body {
       root.setProperty('--theme-grid-bg', '#4a5360');
       root.setProperty('--theme-grid-glow', 'rgba(201,211,220,0.3)');
       root.setProperty('--theme-bg', '#e8ecf0');
+    } else if (theme.name === 'goldBlack') {
+      root.setProperty('--theme-primary', '#D9A441');
+      root.setProperty('--theme-primary-rgb', '217,164,65');
+      root.setProperty('--theme-title', '#D9A441');
+      root.setProperty('--theme-score-bg', '#3c3528');
+      root.setProperty('--theme-grid-bg', '#2B2116');
+      root.setProperty('--theme-grid-glow', 'rgba(217,164,65,0.25)');
+      root.setProperty('--theme-bg', '#1a1815');
     } else if (theme.name === 'aurora') {
       root.setProperty('--theme-primary', '#00E5FF');
       root.setProperty('--theme-primary-rgb', '0,229,255');
@@ -724,21 +724,26 @@ body {
 
         var bg = tileColor(val, theme);
 
-        if (theme.name === 'goldBlack' && val >= 4096) {
+        if (theme.name === 'platinum' && val >= 4096) {
+          bg = '#e8ecf0';
+          tile.style.color = '#4a5568';
+          tile.style.boxShadow = 'inset 0 0 20px rgba(201,211,220,0.5), 0 0 10px rgba(201,211,220,0.3)';
+        } else if (theme.name === 'goldBlack' && val >= 8192) {
           bg = '#2B2116';
           tile.style.color = '#D9A441';
           tile.style.border = '2px solid rgba(217,164,65,0.5)';
           tile.style.textShadow = '0 0 12px rgba(217,164,65,0.4)';
-        } else if (theme.name === 'platinum' && val >= 8192) {
-          bg = '#e8ecf0';
-          tile.style.color = '#4a5568';
-          tile.style.boxShadow = 'inset 0 0 20px rgba(201,211,220,0.5), 0 0 10px rgba(201,211,220,0.3)';
         } else if (theme.name === 'aurora' && val >= 16384) {
           bg = '#051520';
           tile.style.color = '#00E5FF';
           tile.style.boxShadow = '0 0 20px rgba(0,229,255,0.4), inset 0 0 15px rgba(139,92,246,0.2)';
         } else {
-          tile.style.color = val >= 8 ? '#f9f6f2' : (isDark(bg) ? '#f9f6f2' : '#776e65');
+          if (theme.name === 'platinum') {
+            // Platinum theme: all tile numbers use dark text
+            tile.style.color = '#4a5568';
+          } else {
+            tile.style.color = val >= 8 ? '#f9f6f2' : (isDark(bg) ? '#f9f6f2' : '#776e65');
+          }
           tile.style.border = '';
           tile.style.boxShadow = '';
           tile.style.textShadow = '';
@@ -754,7 +759,7 @@ body {
         if (mergedPos && mergedPos.some(function(p) { return p.r === r && p.c === c; })) {
           tile.classList.add('tile-pop');
         }
-        if (val >= 4096 && (theme.name === 'goldBlack' || theme.name === 'platinum' || theme.name === 'aurora')) {
+        if (val >= 4096 && (theme.name === 'platinum' || theme.name === 'goldBlack' || theme.name === 'aurora')) {
           tile.classList.add('tile-glow');
         }
       }
