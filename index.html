@@ -198,6 +198,29 @@ body {
   50% { box-shadow: 0 0 20px rgba(217,164,65,0.7); }
 }
 
+/* Merge light sweep for Level 12 */
+.merge-sweep {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.merge-sweep.sweep-right { animation: sweepH 0.35s ease-out forwards; transform-origin: left center; }
+.merge-sweep.sweep-left  { animation: sweepH 0.35s ease-out forwards; transform-origin: right center; }
+.merge-sweep.sweep-down  { animation: sweepV 0.35s ease-out forwards; transform-origin: top center; }
+.merge-sweep.sweep-up    { animation: sweepV 0.35s ease-out forwards; transform-origin: bottom center; }
+
+@keyframes sweepH {
+  0%   { transform: scaleX(0); opacity: 0.9; }
+  100% { transform: scaleX(1); opacity: 0; }
+}
+@keyframes sweepV {
+  0%   { transform: scaleY(0); opacity: 0.9; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
 .overlay {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -687,6 +710,42 @@ body {
     hueOffset = 0;
   }
 
+  // ── Merge Light Sweep ──────────────────────────
+  function mergeSweep(r, c) {
+    if (currentTheme.name !== 'platinum') return;
+    var val = grid[r][c];
+    var color = getPlatinumColor(val);
+    var layer = document.getElementById('tileLayer');
+    var container = document.getElementById('gridContainer');
+    var padding = 15, gap = 15;
+    var size = container.clientWidth - padding * 2; // grid area = square
+    var cellSize = (size - gap * 3) / 4;
+    var x = c * (cellSize + gap);
+    var y = r * (cellSize + gap);
+
+    // Right: from tile right edge to grid right edge
+    var rightW = size - (x + cellSize);
+    if (rightW > 0) addSweep(layer, color, 'sweep-right', x + cellSize, y + cellSize * 0.45, rightW, cellSize * 0.1);
+    // Left: from grid left edge to tile left edge
+    if (x > 0) addSweep(layer, color, 'sweep-left', 0, y + cellSize * 0.45, x, cellSize * 0.1);
+    // Down: from tile bottom edge to grid bottom edge
+    var downH = size - (y + cellSize);
+    if (downH > 0) addSweep(layer, color, 'sweep-down', x + cellSize * 0.45, y + cellSize, cellSize * 0.1, downH);
+    // Up: from grid top edge to tile top edge
+    if (y > 0) addSweep(layer, color, 'sweep-up', x + cellSize * 0.45, 0, cellSize * 0.1, y);
+  }
+
+  function addSweep(layer, color, cls, left, top, width, height) {
+    var el = document.createElement('div');
+    el.className = 'merge-sweep ' + cls;
+    el.style.cssText =
+      'left:' + left + 'px;top:' + top + 'px;' +
+      'width:' + width + 'px;height:' + height + 'px;' +
+      'background:' + color + ';';
+    layer.appendChild(el);
+    el.addEventListener('animationend', function() { el.remove(); });
+  }
+
   // ── Palette Strip (debug) ─────────────────────
   function showPalette(theme) {
     var strip = document.getElementById('paletteStrip');
@@ -796,6 +855,11 @@ body {
       for (var c = 0; c < 4; c++)
         if (snapshot[r][c] !== 0 && grid[r][c] === snapshot[r][c] * 2)
           mergedPos.push({r: r, c: c});
+
+    // Trigger light sweeps for merged tiles in Level 12
+    for (var mi = 0; mi < mergedPos.length; mi++) {
+      mergeSweep(mergedPos[mi].r, mergedPos[mi].c);
+    }
 
     addTile();
     updateBest();
