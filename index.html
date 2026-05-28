@@ -1443,6 +1443,17 @@ body {
 
   // ── Player Name Input ─────────────────────────
   var nameInput = document.getElementById('playerNameInput');
+
+  // Check URL param first (passed from homepage), fallback to localStorage
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlName = urlParams.get('name');
+  if (urlName) {
+    setPlayerName(urlName);
+    // Clean URL without reload
+    var cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+
   nameInput.value = getPlayerName();
   nameInput.addEventListener('input', function() {
     setPlayerName(this.value);
