@@ -363,13 +363,6 @@ body {
   </div>
   <div class="controls">
     <p>合并数字，达到 <strong>2048</strong> 方块！</p>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <label style="font-size:13px;color:#776e65;display:flex;align-items:center;gap:4px;">
-        昵称
-        <input id="playerNameInput" type="text" maxlength="12" placeholder="玩家名"
-          style="width:80px;padding:4px 6px;border:2px solid #bbada0;border-radius:4px;
-                 font-size:13px;background:#fff;color:#776e65;outline:none;">
-      </label>
       <button class="btn" id="debugBtn">调试</button>
       <button class="btn" id="statsBtn">统计</button>
       <button class="btn" id="newGameBtn">新游戏</button>
@@ -410,14 +403,13 @@ body {
   var API_BASE = 'https://score-api-reocwlotly.cn-shanghai.fcapp.run';
   var apiReady = true;
 
-  // ── Player Name ───────────────────────────────
-  function getPlayerName() {
-    var saved = localStorage.getItem('playerName2048');
-    return saved || '';
-  }
+  // ── Player Name (from URL param) ──────────────
+  var urlParams = new URLSearchParams(window.location.search);
+  var playerName = urlParams.get('name') || '匿名玩家';
+  window.history.replaceState({}, '', window.location.pathname);
 
-  function setPlayerName(name) {
-    localStorage.setItem('playerName2048', name.trim().slice(0, 12));
+  function getPlayerName() {
+    return playerName;
   }
 
   // ── Theme Config ──────────────────────────────
@@ -1440,24 +1432,6 @@ body {
           '<div class="rank-row" style="justify-content:center;color:#bbada0;">加载失败</div>';
       });
   }
-
-  // ── Player Name Input ─────────────────────────
-  var nameInput = document.getElementById('playerNameInput');
-
-  // Check URL param first (passed from homepage), fallback to localStorage
-  var urlParams = new URLSearchParams(window.location.search);
-  var urlName = urlParams.get('name');
-  if (urlName) {
-    setPlayerName(urlName);
-    // Clean URL without reload
-    var cleanUrl = window.location.pathname;
-    window.history.replaceState({}, '', cleanUrl);
-  }
-
-  nameInput.value = getPlayerName();
-  nameInput.addEventListener('input', function() {
-    setPlayerName(this.value);
-  });
 
   // ── Start ─────────────────────────────────────
   init();
