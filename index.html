@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>2048🐰</title>
+<!-- LeanCloud SDK -->
+<script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.2/dist/av-min.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -363,7 +365,13 @@ body {
   </div>
   <div class="controls">
     <p>合并数字，达到 <strong>2048</strong> 方块！</p>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <label style="font-size:13px;color:#776e65;display:flex;align-items:center;gap:4px;">
+        昵称
+        <input id="playerNameInput" type="text" maxlength="12" placeholder="玩家名"
+          style="width:80px;padding:4px 6px;border:2px solid #bbada0;border-radius:4px;
+                 font-size:13px;background:#fff;color:#776e65;outline:none;">
+      </label>
       <button class="btn" id="debugBtn">调试</button>
       <button class="btn" id="statsBtn">统计</button>
       <button class="btn" id="newGameBtn">新游戏</button>
@@ -386,14 +394,40 @@ body {
 </div>
 
 <div class="stats-panel" id="statsPanel">
-  <h2>最高分趋势</h2>
-  <canvas id="statsCanvas" width="380" height="240"></canvas>
+  <h2>排行榜</h2>
+  <div style="display:flex;gap:12px;margin-bottom:12px;">
+    <button class="btn" id="rankLocalBtn" style="background:#bbada0;">本地</button>
+    <button class="btn" id="rankGlobalBtn">全球</button>
+  </div>
   <div class="top10-list" id="top10List"></div>
-  <button class="btn" id="statsCloseBtn">关闭</button>
+  <div class="top10-list" id="globalTopList" style="display:none;"></div>
+  <p id="globalLoading" style="display:none;color:#bbada0;font-size:14px;">加载中...</p>
+  <button class="btn" id="statsCloseBtn" style="margin-top:12px;">关闭</button>
 </div>
 
 <script>
 (function() {
+  // ── LeanCloud Init ────────────────────────────
+  // TODO: 替换为你的 App ID 和 App Key
+  var LC_APP_ID = 'YOUR_LEANCLOUD_APP_ID';
+  var LC_APP_KEY = 'YOUR_LEANCLOUD_APP_KEY';
+  var lcReady = false;
+
+  try {
+    AV.init({ appId: LC_APP_ID, appKey: LC_APP_KEY, serverURL: 'https://please-replace.lc-cn-n1-shared.com' });
+    lcReady = typeof AV !== 'undefined' && LC_APP_ID !== 'YOUR_LEANCLOUD_APP_ID';
+  } catch(e) { lcReady = false; }
+
+  // ── Player Name ───────────────────────────────
+  function getPlayerName() {
+    var saved = localStorage.getItem('playerName2048');
+    return saved || '';
+  }
+
+  function setPlayerName(name) {
+    localStorage.setItem('playerName2048', name.trim().slice(0, 12));
+  }
+
   // ── Theme Config ──────────────────────────────
   var THEMES = [
     { max: 16,  color: '#F64136', palette: ['#FEE8E7','#FDD0CD','#FBB3AF','#FA918A','#F86B62','#F64136'], name: 'red' },
@@ -951,8 +985,24 @@ body {
 
   function recordGame() {
     if (score <= 0) return;
-    statsData.push({time: Date.now(), score: score});
+    var record = {time: Date.now(), score: score};
+    statsData.push(record);
     localStorage.setItem('stats2048', JSON.stringify(statsData));
+
+    // Submit to LeanCloud global leaderboard
+    if (lcReady) {
+      var name = getPlayerName() || '匿名玩家';
+      var Score = AV.Object.extend('Score');
+      var scoreObj = new Score();
+      scoreObj.set('playerName', name);
+      scoreObj.set('score', score);
+      scoreObj.set('maxTile', getMaxVal());
+      scoreObj.save().then(function() {
+        console.log('Score uploaded to global leaderboard');
+      }).catch(function(e) {
+        console.warn('Score upload failed:', e.message);
+      });
+    }
   }
 
   function formatTime(ts) {
@@ -1211,8 +1261,24 @@ body {
   // ── Statistics Chart ──────────────────────────
   document.getElementById('statsBtn').addEventListener('click', function() {
     document.getElementById('statsPanel').classList.add('visible');
-    drawChart();
     showTop10();
+    document.getElementById('globalTopList').style.display = 'none';
+    document.getElementById('globalLoading').style.display = 'none';
+  });
+
+  document.getElementById('rankLocalBtn').addEventListener('click', function() {
+    showTop10();
+    document.getElementById('globalTopList').style.display = 'none';
+    document.getElementById('globalLoading').style.display = 'none';
+    this.style.background = '#bbada0';
+    document.getElementById('rankGlobalBtn').style.background = '';
+  });
+
+  document.getElementById('rankGlobalBtn').addEventListener('click', function() {
+    document.getElementById('top10List').innerHTML = '';
+    showGlobalTop();
+    this.style.background = '#bbada0';
+    document.getElementById('rankLocalBtn').style.background = '';
   });
 
   document.getElementById('statsCloseBtn').addEventListener('click', function() {
@@ -1331,6 +1397,65 @@ body {
     }
     list.innerHTML = html;
   }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function showGlobalTop() {
+    if (!lcReady) {
+      document.getElementById('globalTopList').innerHTML =
+        '<div class="rank-row" style="justify-content:center;color:#bbada0;">未配置 LeanCloud，无法加载全球排行</div>';
+      document.getElementById('globalTopList').style.display = 'block';
+      return;
+    }
+    var globalList = document.getElementById('globalTopList');
+    var loadingEl = document.getElementById('globalLoading');
+    globalList.style.display = 'none';
+    loadingEl.style.display = 'block';
+
+    var query = new AV.Query('Score');
+    query.descending('score');
+    query.limit(20);
+    query.find().then(function(results) {
+      loadingEl.style.display = 'none';
+      globalList.style.display = 'block';
+      if (results.length === 0) {
+        globalList.innerHTML =
+          '<div class="rank-row" style="justify-content:center;color:#bbada0;">暂无全球记录，快去破纪录吧！</div>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < results.length; i++) {
+        var s = results[i];
+        var d = new Date(s.createdAt);
+        var pad = function(n) { return n < 10 ? '0' + n : n; };
+        var timeStr = (d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        var name = escapeHtml(s.get('playerName') || '匿名');
+        html += '<div class="rank-row">' +
+          '<span class="rank-num">' + (i + 1) + '</span>' +
+          '<span class="rank-score">' + name + '</span>' +
+          '<span class="rank-score" style="text-align:right;">' + s.get('score').toLocaleString() + '</span>' +
+          '<span class="rank-time">' + timeStr + '</span>' +
+          '</div>';
+      }
+      globalList.innerHTML = html;
+    }).catch(function(e) {
+      loadingEl.style.display = 'none';
+      globalList.style.display = 'block';
+      globalList.innerHTML =
+        '<div class="rank-row" style="justify-content:center;color:#bbada0;">加载失败: ' + escapeHtml(e.message) + '</div>';
+    });
+  }
+
+  // ── Player Name Input ─────────────────────────
+  var nameInput = document.getElementById('playerNameInput');
+  nameInput.value = getPlayerName();
+  nameInput.addEventListener('input', function() {
+    setPlayerName(this.value);
+  });
 
   // ── Start ─────────────────────────────────────
   init();
